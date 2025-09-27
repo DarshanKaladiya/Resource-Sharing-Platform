@@ -1,0 +1,161 @@
+{% extends 'classroom/base.html' %}
+
+{% block content %}
+<style>
+/* Password requirements styling */
+#password-requirements {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 5px;
+}
+
+#password-requirements li {
+  color: red; /* default not satisfied */
+}
+
+#password-requirements li.valid {
+  color: green;
+  font-weight: bold;
+}
+</style>
+
+<div class="form-container">
+    <div class="form-header">
+        <h2>Create an Account</h2>
+    </div>
+    <div class="form-body">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-field">
+                {{ form.username.label_tag }}
+                {{ form.username }}
+                {% if form.username.help_text %}<div class="helptext">{{ form.username.help_text|safe }}</div>{% endif %}
+                {% for error in form.username.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    {{ form.first_name.label_tag }}
+                    {{ form.first_name }}
+                    {% for error in form.first_name.errors %}<div class="error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="form-field">
+                    {{ form.last_name.label_tag }}
+                    {{ form.last_name }}
+                    {% for error in form.last_name.errors %}<div class="error">{{ error }}</div>{% endfor %}
+                </div>
+            </div>
+
+            <div class="form-field">
+                {{ form.email.label_tag }}
+                {{ form.email }}
+                {% for error in form.email.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+
+            <!-- Password 1 -->
+            <div class="form-field">
+                {{ form.password1.label_tag }}
+                {{ form.password1 }}
+                <ul id="password-requirements">
+                    <li id="req-length">At least 8 characters</li>
+                    <li id="req-numeric">Not entirely numeric</li>
+                    <li id="req-common">Not a common password</li>
+                    <li id="req-similarity">Not too similar to personal info</li>
+                </ul>
+                {% for error in form.password1.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="show-password-container">
+                <input type="checkbox" id="show-password1" onclick="togglePasswordVisibility('id_password1')">
+                <label for="show-password1">Show Password</label>
+            </div>
+
+            <!-- Password 2 -->
+            <div class="form-field">
+                {{ form.password2.label_tag }}
+                {{ form.password2 }}
+                {% if form.password2.help_text %}<div class="helptext">{{ form.password2.help_text|safe }}</div>{% endif %}
+                {% for error in form.password2.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="show-password-container">
+                <input type="checkbox" id="show-password2" onclick="togglePasswordVisibility('id_password2')">
+                <label for="show-password2">Show Password</label>
+            </div>
+
+            <!-- Role -->
+            <div class="form-field">
+                <label>{{ form.role.label }}</label>
+                <ul>
+                    {% for radio in form.role %}
+                    <li>
+                        <label for="{{ radio.id_for_label }}">
+                            {{ radio.tag }}
+                            <span class="radio-label">{{ radio.choice_label }}</span>
+                        </label>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% for error in form.role.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function togglePasswordVisibility(fieldId) {
+    const passwordField = document.getElementById(fieldId);
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+    } else {
+        passwordField.type = "password";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const passwordField = document.getElementById("id_password1");
+
+    const reqLength = document.getElementById("req-length");
+    const reqNumeric = document.getElementById("req-numeric");
+    const reqCommon = document.getElementById("req-common");
+    const reqSimilarity = document.getElementById("req-similarity");
+
+    const commonPasswords = ["password", "12345678", "qwerty", "letmein"];
+
+    passwordField.addEventListener("input", function () {
+        const value = passwordField.value;
+
+        // Length check
+        if (value.length >= 8) {
+            reqLength.classList.add("valid");
+        } else {
+            reqLength.classList.remove("valid");
+        }
+
+        // Not entirely numeric
+        if (!/^\d+$/.test(value)) {
+            reqNumeric.classList.add("valid");
+        } else {
+            reqNumeric.classList.remove("valid");
+        }
+
+        // Not a common password
+        if (value && !commonPasswords.includes(value.toLowerCase())) {
+            reqCommon.classList.add("valid");
+        } else {
+            reqCommon.classList.remove("valid");
+        }
+
+        // Similarity check placeholder
+        if (value.length > 0) {
+            reqSimilarity.classList.add("valid");
+        } else {
+            reqSimilarity.classList.remove("valid");
+        }
+    });
+});
+</script>
+{% endblock %}

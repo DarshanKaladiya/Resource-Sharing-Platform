@@ -1,0 +1,58 @@
+{% extends 'classroom/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Student Dashboard</h2>
+</div>
+
+<!-- Enrolled Courses Section -->
+<div class="dashboard-section">
+    <div class="dashboard-header">
+        <h3>My Enrolled Courses</h3>
+    </div>
+    <div class="course-grid">
+        {% for enrollment in enrollments %}
+            <div class="course-card">
+                <div class="course-card-content">
+                    <h3><a href="{% url 'classroom:course_detail' enrollment.course.id %}">{{ enrollment.course.title }}</a></h3>
+                    <p class="course-card-meta">Mentor: <strong>{{ enrollment.course.mentor.username }}</strong></p>
+                </div>
+                <div class="course-card-footer">
+                     <a href="{% url 'classroom:course_detail' enrollment.course.id %}" class="btn btn-secondary">Go to Course</a>
+                </div>
+            </div>
+        {% empty %}
+            <p>You are not enrolled in any courses yet. <a href="{% url 'classroom:course_list' %}">Explore courses</a> to get started.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Submitted Resources Section -->
+<div class="dashboard-section">
+     <div class="dashboard-header">
+        <h3>My Submitted Resources</h3>
+    </div>
+    <div class="resource-list">
+        {% with submitted_resources=user.submitted_resources.all %}
+            {% for resource in submitted_resources %}
+                <div class="resource-item">
+                    <div class="resource-item-main">
+                        <span>{{ resource.title }} (for course "{{ resource.course.title }}")</span>
+                    </div>
+                    <div class="resource-actions">
+                        <span class="status-badge status-{{ resource.status|lower }}">{{ resource.get_status_display }}</span>
+                        <!-- Delete Button for student's own resources -->
+                        <form action="{% url 'classroom:delete_resource' resource.id %}" method="post" onsubmit="return confirm('Are you sure you want to delete this resource?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            {% empty %}
+                <p>You have not submitted any resources yet. You can upload resources from a course's detail page after you enroll.</p>
+            {% endfor %}
+        {% endwith %}
+    </div>
+</div>
+{% endblock %}
+

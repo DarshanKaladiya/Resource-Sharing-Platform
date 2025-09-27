@@ -1,0 +1,44 @@
+{% extends 'classroom/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="homepage-container">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Welcome to FriendMates</h1>
+            <p class="hero-subtitle">The collaborative learning platform where students and mentors connect, share, and grow together.</p>
+            <a href="{% url 'classroom:signup' %}" class="btn btn-primary btn-lg">Get Started for Free</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <h2 class="section-title">Why Choose FriendMates?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🤝</div>
+                <h3 class="feature-title">Collaborate & Share</h3>
+                <p>Students can share curated study materials, creating a rich, community-driven library of resources.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3 class="feature-title">Mentor Verified</h3>
+                <p>All student-shared resources are verified by mentors, ensuring quality and accuracy for everyone.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <h3 class="feature-title">Stay Notified</h3>
+                <p>An integrated notification system keeps you updated on resource approvals and new content.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action Section -->
+    <section class="cta-section">
+        <h2 class="section-title">Ready to Join the Community?</h2>
+        <p>Create an account today and start your collaborative learning journey.</p>
+        <a href="{% url 'classroom:signup' %}" class="btn btn-primary btn-lg">Sign Up Now</a>
+    </section>
+</div>
+{% endblock %}

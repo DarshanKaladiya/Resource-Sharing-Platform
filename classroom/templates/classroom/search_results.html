@@ -1,0 +1,51 @@
+{% extends 'classroom/base.html' %}
+{% load classroom_extras %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Search Results for "{{ query }}"</h2>
+</div>
+
+<div class="search-results-container">
+    <!-- Courses Found Section -->
+    <div class="search-section">
+        <h3>Courses Found ({{ course_results.count }})</h3>
+        {% if course_results %}
+            <div class="course-grid">
+                {% for course in course_results %}
+                    <div class="course-card">
+                        <div class="course-card-content">
+                            <h3><a href="{% url 'classroom:course_detail' course.pk %}">{{ course.title }}</a></h3>
+                            <p class="course-card-description">{{ course.description|truncatewords:20 }}</p>
+                            <p class="course-card-meta">Mentor: <strong>{{ course.mentor.username }}</strong></p>
+                        </div>
+                        <div class="course-card-footer">
+                             <a href="{% url 'classroom:course_detail' course.pk %}" class="btn btn-secondary">View Details</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No courses match your search.</p>
+        {% endif %}
+    </div>
+
+    <!-- Approved Resources Found Section -->
+    <div class="search-section">
+        <h3>Approved Resources Found ({{ resource_results.count }})</h3>
+        {% if resource_results %}
+            <div class="resource-list">
+                {% for resource in resource_results %}
+                    <div class="resource-item">
+                        <a href="{{ resource.file.url }}" target="_blank">{{ resource.title }}</a>
+                        <span class="uploader-info">In course: {{ resource.course.title }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No resources match your search.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,13 @@
+{% extends 'classroom/base.html' %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Upload a Resource for {{ course.title }}</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Upload Resource</button>
+    </form>
+</div>
+{% endblock %}
+

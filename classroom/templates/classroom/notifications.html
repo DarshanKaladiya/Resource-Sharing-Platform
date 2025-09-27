@@ -1,0 +1,21 @@
+{% extends 'classroom/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Notifications</h2>
+</div>
+
+<div class="notification-list">
+    {% for notification in notifications %}
+        <div class="notification-item">
+            <p class="message">{{ notification.message }}</p>
+            <p class="timestamp">{{ notification.created_at|timesince }} ago</p>
+        </div>
+    {% empty %}
+        <div class="content-card">
+            <p>You have no new notifications.</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

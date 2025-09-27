@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FriendMates</title>
+    <link rel="stylesheet" href="{% static 'classroom/style.css' %}">
+</head>
+<body>
+    <div class="page-container">
+        <nav class="navbar">
+            <a href="{% url 'classroom:home' %}" class="logo">FriendMates</a>
+            <div class="nav-right">
+                <ul class="nav-links">
+                    {% if user.is_authenticated %}
+                        <!-- Links for logged-in users -->
+                        <li>
+                            <form action="{% url 'classroom:search_results' %}" method="get" class="search-form">
+                                <input type="text" name="query" placeholder="Search..." value="{{ request.GET.query }}">
+                                <button type="submit" class="btn btn-primary">Search</button>
+                            </form>
+                        </li>
+                        {% if user.groups.all.0.name == 'Mentors' %}
+                            <li><a href="{% url 'classroom:mentor_dashboard' %}">Mentor Dashboard</a></li>
+                        {% else %}
+                             <li><a href="{% url 'classroom:student_dashboard' %}">Student Dashboard</a></li>
+                        {% endif %}
+                        <li><a href="{% url 'classroom:course_list' %}" >Courses</a></li>
+                        <li class="notification-indicator">
+                            <a href="{% url 'classroom:notification_list' %}">Notifications</a>
+                            {% if unread_notifications_count > 0 %}
+                                <span class="notification-count">{{ unread_notifications_count }}</span>
+                            {% endif %}
+                        </li>
+                        <li>
+                            <form action="{% url 'logout' %}" method="post" class="logout-form">
+                                {% csrf_token %}
+                                <button type="submit" class="logout-button">Logout</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <!-- Links for logged-out users -->
+                        <li><a href="{% url 'login' %}" class="btn btn-secondary">Login</a></li>
+                        <li><a href="{% url 'classroom:signup' %}" class="btn btn-primary">Sign Up</a></li>
+                    {% endif %}
+                     <li>
+                        <button id="theme-toggle" class="btn theme-toggle-btn">🌓</button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="container">
+            {% block content %}
+            {% endblock %}
+        </main>
+
+        <footer class="footer">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <h4>About FriendMates</h4>
+                    <p>A collaborative learning platform connecting students and mentors through shared, verified study materials.</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Contact Us</h4>
+                    <p>Email: contact@friendmates.com</p>
+                    <p>Phone: +91 12345 67890</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#">Instagram</a>
+                        <a href="#">Twitter</a>
+                        <a href="#">Facebook</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; {% now "Y" %} FriendMates. All Rights Reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            if (body.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark-mode');
+            } else {
+                localStorage.removeItem('theme');
+            }
+        });
+
+        // Apply theme on load
+        if (localStorage.getItem('theme') === 'dark-mode') {
+            body.classList.add('dark-mode');
+        }
+    </script>
+</body>
+</html>
+

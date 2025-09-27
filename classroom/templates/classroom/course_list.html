@@ -1,0 +1,38 @@
+{% extends 'classroom/base.html' %}
+{% load classroom_extras %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Available Courses</h2>
+</div>
+
+<div class="course-grid">
+    {% for course in courses %}
+        <div class="course-card">
+            <div class="course-card-content">
+                <h3><a href="{% url 'classroom:course_detail' course.pk %}">{{ course.title }}</a></h3>
+                <p class="course-card-description">{{ course.description|truncatewords:20 }}</p>
+                <p class="course-card-meta">Mentor: <strong>{{ course.mentor.username }}</strong></p>
+            </div>
+            <div class="course-card-footer">
+                {% if user.is_authenticated %}
+                    {% if user == course.mentor %}
+                        <p class="enrolled-status">You are the mentor of this course.</p>
+                    {% elif course|get_enrollment_status:user %}
+                        <p class="enrolled-status">✓ Enrolled</p>
+                    {% else %}
+                        <a href="{% url 'classroom:enroll' course.pk %}" class="btn btn-primary">Enroll Now</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-secondary">Login to enroll</a>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="content-card">
+            <p>No courses are available yet. Check back soon!</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

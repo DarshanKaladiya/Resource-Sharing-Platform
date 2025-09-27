@@ -1,0 +1,13 @@
+{% extends 'classroom/base.html' %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Create a New Course</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Create Course</button>
+    </form>
+</div>
+{% endblock %}
+

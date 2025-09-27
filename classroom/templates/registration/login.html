@@ -1,0 +1,55 @@
+{% extends 'classroom/base.html' %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2>Login to Your Account</h2>
+    </div>
+    <div class="form-body">
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-error">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-field">
+                <label for="id_username">Username</label>
+                <input type="text" name="username" id="id_username" required>
+            </div>
+
+            <div class="form-field">
+                <label for="id_password">Password</label>
+                <input type="password" name="password" id="id_password" required>
+            </div>
+            
+            <div class="show-password-container">
+                <input type="checkbox" id="show-password" onclick="togglePasswordVisibility('id_password')">
+                <label for="show-password">Show Password</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Login</button>
+
+            <div class="form-footer-link">
+                <p>Don't have an account? <a href="{% url 'classroom:signup' %}">Sign up here</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function togglePasswordVisibility(fieldId) {
+    const passwordField = document.getElementById(fieldId);
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+    } else {
+        passwordField.type = "password";
+    }
+}
+</script>
+{% endblock %}
+

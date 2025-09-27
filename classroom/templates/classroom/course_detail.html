@@ -1,0 +1,72 @@
+{% extends 'classroom/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ course.title }}</h2>
+</div>
+
+<div class="course-detail-grid">
+    <div class="course-main-content">
+        <!-- Course Description Card -->
+        <div class="content-card">
+             <p>{{ course.description }}</p>
+        </div>
+
+        <!-- Approved Resources Section -->
+        <h3 class="section-title">Approved Study Materials</h3>
+        <div class="resource-list">
+            {% for resource in approved_resources %}
+                <div class="resource-item">
+                    <div class="resource-item-main">
+                        <a href="{{ resource.file.url }}" target="_blank">{{ resource.title }}</a>
+                        {% if resource.description %}
+                            <p class="resource-description">{{ resource.description }}</p>
+                        {% endif %}
+                    </div>
+                    <span class="uploader-info">Uploaded by {{ resource.uploaded_by.username }}</span>
+                </div>
+            {% empty %}
+                <div class="content-card">
+                    <p>No study materials have been approved for this course yet.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Sidebar for Actions and Info -->
+    <div class="course-sidebar">
+        <h3>Course Info</h3>
+        <p><strong>Mentor:</strong> {{ course.mentor.username }}</p>
+        <hr>
+        
+        {% if user.is_authenticated %}
+            {% if user == course.mentor %}
+                <p class="enrolled-status">You are the mentor of this course.</p>
+                 <div class="upload-section">
+                    <h4>Share a New Resource</h4>
+                    <form action="{% url 'classroom:upload_resource' course.id %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ upload_form.as_p }}
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </form>
+                </div>
+            {% elif is_enrolled %}
+                <p class="enrolled-status">✓ You are enrolled</p>
+                <div class="upload-section">
+                    <h4>Share a New Resource</h4>
+                    <form action="{% url 'classroom:upload_resource' course.id %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ upload_form.as_p }}
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </form>
+                </div>
+            {% else %}
+                <a href="{% url 'classroom:enroll' course.id %}" class="btn btn-primary btn-block">Enroll to Participate</a>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'login' %}" class="btn btn-secondary btn-block">Login to enroll</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
