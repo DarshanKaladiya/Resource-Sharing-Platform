@@ -2,18 +2,32 @@
 
 {% block content %}
 <div class="page-header">
-    <h2>Notifications</h2>
+    <div class="dashboard-header">
+        <h2>Notifications</h2>
+        {% if notifications %}
+            <form action="{% url 'classroom:clear_all_notifications' %}" method="post" onsubmit="return confirm('Are you sure you want to clear all notifications?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Clear All</button>
+            </form>
+        {% endif %}
+    </div>
 </div>
 
 <div class="notification-list">
     {% for notification in notifications %}
         <div class="notification-item">
             <p class="message">{{ notification.message }}</p>
-            <p class="timestamp">{{ notification.created_at|timesince }} ago</p>
+            <div class="notification-footer">
+                <p class="timestamp">{{ notification.created_at|timesince }} ago</p>
+                <form action="{% url 'classroom:delete_notification' notification.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-delete-notification" title="Delete this notification">×</button>
+                </form>
+            </div>
         </div>
     {% empty %}
         <div class="content-card">
-            <p>You have no new notifications.</p>
+            <p>You have no notifications.</p>
         </div>
     {% endfor %}
 </div>

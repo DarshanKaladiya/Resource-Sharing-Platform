@@ -30,5 +30,11 @@ urlpatterns = [
     # URLs for Deleting Content
     path('resource/<int:resource_id>/delete/', views.delete_resource, name='delete_resource'),
     path('course/<int:course_id>/delete/', views.delete_course, name='delete_course'),
+    path('notifications/clear_all/', views.clear_all_notifications, name='clear_all_notifications'),
+    path('notification/<int:notification_id>/delete/', views.delete_notification, name='delete_notification'),
+
+    # URLs for Q&A Feature
+    path('course/<int:course_id>/ask/', views.ask_question, name='ask_question'),
+    path('question/<int:question_id>/answer/', views.post_answer, name='post_answer'),
 ]
 

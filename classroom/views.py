@@ -4,10 +4,9 @@ from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from .models import Course, Resource, Enrollment, Notification, User
-from .form import SignUpForm, CourseForm, ResourceForm, SearchForm
+from .models import Course, Resource, Enrollment, Notification, User, Tag, Question, Answer
+from .form import SignUpForm, CourseForm, ResourceForm, SearchForm, QuestionForm, AnswerForm
 
-# ... (home, signup, course_list, course_detail views remain the same) ...
 def home(request):
     if request.user.is_authenticated:
         return redirect('classroom:course_list')
@@ -33,7 +32,7 @@ def signup(request):
 
 @login_required
 def course_list(request):
-    courses = Course.objects.all()
+    courses = Course.objects.all().order_by('title')
     return render(request, 'classroom/course_list.html', {'courses': courses})
 
 @login_required
@@ -41,19 +40,60 @@ def course_detail(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
     is_enrolled = course.enrolled_students.filter(pk=request.user.pk).exists()
     
+    approved_resources = course.resources.filter(status='Approved')
+    
+    tag_filter = request.GET.get('tag')
+    if tag_filter:
+        approved_resources = approved_resources.filter(tags__name__iexact=tag_filter)
+
+    all_tags = Tag.objects.filter(resource__course=course, resource__status='Approved').distinct()
+    questions = course.questions.all().order_by('-created_at')
+
     context = {
         'course': course,
         'is_enrolled': is_enrolled,
-        'upload_form': ResourceForm()
+        'approved_resources': approved_resources,
+        'all_tags': all_tags,
+        'current_tag': tag_filter,
+        'questions': questions,
+        'question_form': QuestionForm(),
+        'answer_form': AnswerForm(),
     }
 
-    if is_enrolled or request.user == course.mentor:
-        context['approved_resources'] = course.resources.filter(status='Approved')
-        if request.user == course.mentor:
-            context['pending_resources'] = course.resources.filter(status='Pending')
-            context['rejected_resources'] = course.resources.filter(status='Rejected')
+    if request.user == course.mentor:
+        context['pending_resources'] = course.resources.filter(status='Pending')
+        context['rejected_resources'] = course.resources.filter(status='Rejected')
             
     return render(request, 'classroom/course_detail.html', context)
+
+@login_required
+def upload_resource(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    form = ResourceForm()
+    if request.method == 'POST':
+        form = ResourceForm(request.POST, request.FILES)
+        if form.is_valid():
+            resource = form.save(commit=False)
+            resource.course = course
+            resource.uploaded_by = request.user
+            if request.user.groups.filter(name='Mentors').exists():
+                resource.status = 'Approved'
+            else:
+                resource.status = 'Pending'
+                Notification.objects.create(
+                    user=course.mentor,
+                    message=f"Student '{request.user.username}' submitted a new resource '{resource.title}' for your course '{course.title}'."
+                )
+            resource.save()
+
+            tag_names = [tag.strip() for tag in form.cleaned_data.get('tags', '').split(',') if tag.strip()]
+            for tag_name in tag_names:
+                tag, created = Tag.objects.get_or_create(name__iexact=tag_name, defaults={'name': tag_name})
+                resource.tags.add(tag)
+            
+            return redirect('classroom:course_detail', course_id=course.id)
+    
+    return render(request, 'classroom/upload_resource.html', {'form': form, 'course': course})
 
 
 @login_required
@@ -88,33 +128,11 @@ def create_course(request):
     return render(request, 'classroom/create_course.html', {'form': form})
 
 @login_required
-def upload_resource(request, course_id):
-    course = get_object_or_404(Course, pk=course_id)
-    if request.method == 'POST':
-        form = ResourceForm(request.POST, request.FILES)
-        if form.is_valid():
-            resource = form.save(commit=False)
-            resource.course = course
-            resource.uploaded_by = request.user
-            if request.user.groups.filter(name='Mentors').exists():
-                resource.status = 'Approved'
-            else:
-                resource.status = 'Pending'
-                Notification.objects.create(
-                    user=course.mentor,
-                    message=f"Student '{request.user.username}' submitted a new resource '{resource.title}' for your course '{course.title}'."
-                )
-            resource.save()
-            return redirect('classroom:course_detail', course_id=course.id)
-    return redirect('classroom:course_detail', course_id=course.id)
-
-@login_required
 def enroll(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
     Enrollment.objects.get_or_create(student=request.user, course=course)
     return redirect('classroom:course_detail', course_id=course.id)
 
-# ... (search_results_view, approve_resource, reject_resource, notification_list views remain the same) ...
 def search_results_view(request):
     form = SearchForm(request.GET)
     query = request.GET.get('query')
@@ -126,8 +144,8 @@ def search_results_view(request):
             Q(title__icontains=query) | Q(description__icontains=query)
         )
         resource_results = Resource.objects.filter(
-            Q(title__icontains=query) & Q(status='Approved')
-        )
+            Q(title__icontains=query) | Q(description__icontains=query)
+        ).filter(status='Approved')
 
     return render(request, 'classroom/search_results.html', {
         'form': form,
@@ -161,17 +179,8 @@ def reject_resource(request, resource_id):
     return redirect('classroom:mentor_dashboard')
 
 @login_required
-def notification_list(request):
-    notifications = request.user.notifications.all().order_by('-created_at')
-    request.user.notifications.update(is_read=True)
-    return render(request, 'classroom/notifications.html', {'notifications': notifications})
-
-
-# NEW view for students to delete their own resources
-@login_required
 def delete_resource(request, resource_id):
     resource = get_object_or_404(Resource, pk=resource_id)
-    # Security check: only the user who uploaded the resource can delete it
     if request.user == resource.uploaded_by:
         resource.delete()
         messages.success(request, 'Your resource has been successfully deleted.')
@@ -179,11 +188,9 @@ def delete_resource(request, resource_id):
         messages.error(request, 'You are not authorized to delete this resource.')
     return redirect('classroom:student_dashboard')
 
-# NEW view for mentors to delete their own courses
 @login_required
 def delete_course(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
-    # Security check: only the mentor of the course can delete it
     if request.user == course.mentor:
         course.delete()
         messages.success(request, 'The course has been successfully deleted.')
@@ -191,6 +198,52 @@ def delete_course(request, course_id):
         messages.error(request, 'You are not authorized to delete this course.')
     return redirect('classroom:mentor_dashboard')
 
+@login_required
+def notification_list(request):
+    notifications = request.user.notifications.all().order_by('-created_at')
+    request.user.notifications.update(is_read=True)
+    return render(request, 'classroom/notifications.html', {'notifications': notifications})
+
+@login_required
+def clear_all_notifications(request):
+    if request.method == 'POST':
+        request.user.notifications.all().delete()
+        messages.success(request, 'All notifications have been cleared.')
+    return redirect('classroom:notification_list')
+
+@login_required
+def delete_notification(request, notification_id):
+    notification = get_object_or_404(Notification, pk=notification_id)
+    if request.method == 'POST' and notification.user == request.user:
+        notification.delete()
+        messages.success(request, 'Notification deleted.')
+    return redirect('classroom:notification_list')
+
+@login_required
+def ask_question(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    if request.method == 'POST':
+        form = QuestionForm(request.POST)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.course = course
+            question.user = request.user
+            question.save()
+            messages.success(request, 'Your question has been posted.')
+    return redirect('classroom:course_detail', course_id=course.id)
+
+@login_required
+def post_answer(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    if request.method == 'POST':
+        form = AnswerForm(request.POST)
+        if form.is_valid():
+            answer = form.save(commit=False)
+            answer.question = question
+            answer.user = request.user
+            answer.save()
+            messages.success(request, 'Your answer has been posted.')
+    return redirect('classroom:course_detail', course_id=question.course.id)
 
 def notifications_context_processor(request):
     if request.user.is_authenticated:

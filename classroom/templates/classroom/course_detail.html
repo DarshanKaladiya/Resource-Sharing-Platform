@@ -1,4 +1,5 @@
 {% extends 'classroom/base.html' %}
+{% load classroom_extras %}
 
 {% block content %}
 <div class="page-header">
@@ -12,6 +13,17 @@
              <p>{{ course.description }}</p>
         </div>
 
+        <!-- Tag Filter Section -->
+        <div class="tag-filter-section">
+            <h4>Filter by Tag:</h4>
+            <div class="tag-list">
+                <a href="{% url 'classroom:course_detail' course.id %}" class="tag-badge {% if not current_tag %}active{% endif %}">All</a>
+                {% for tag in all_tags %}
+                    <a href="?tag={{ tag.name }}" class="tag-badge {% if current_tag == tag.name %}active{% endif %}">{{ tag.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
         <!-- Approved Resources Section -->
         <h3 class="section-title">Approved Study Materials</h3>
         <div class="resource-list">
@@ -22,14 +34,83 @@
                         {% if resource.description %}
                             <p class="resource-description">{{ resource.description }}</p>
                         {% endif %}
+                        <div class="tag-list resource-tags">
+                            {% for tag in resource.tags.all %}
+                                <span class="tag-badge">{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
                     </div>
-                    <span class="uploader-info">Uploaded by {{ resource.uploaded_by.username }}</span>
+                    <div class="uploader-info">
+                        <span>By {{ resource.uploaded_by.username }}</span>
+                        <span class="role-badge role-{{ resource.uploaded_by|get_user_role|lower }}">
+                            {{ resource.uploaded_by|get_user_role }}
+                        </span>
+                    </div>
                 </div>
             {% empty %}
                 <div class="content-card">
-                    <p>No study materials have been approved for this course yet.</p>
+                    <p>No study materials match the current filter.</p>
                 </div>
             {% endfor %}
+        </div>
+
+        <!-- Q&A Section -->
+        <h3 class="section-title">Q&A Forum</h3>
+        <div class="qa-section">
+            {% if is_enrolled or user == course.mentor %}
+            <div class="qa-form-container">
+                <h4>Ask a New Question</h4>
+                <form action="{% url 'classroom:ask_question' course.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="form-field">
+                        {{ question_form.title.label_tag }}
+                        {{ question_form.title }}
+                    </div>
+                     <div class="form-field">
+                        {{ question_form.content.label_tag }}
+                        {{ question_form.content }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Post Question</button>
+                </form>
+            </div>
+            {% endif %}
+
+            <div class="question-list">
+                {% for question in questions %}
+                <div class="question-item">
+                    <div class="question-header">
+                        <strong class="question-title">{{ question.title }}</strong>
+                        <small class="question-meta">Asked by {{ question.user.username }} ({{ question.user|get_user_role }}) {{ question.created_at|timesince }} ago</small>
+                    </div>
+                    <p class="question-content">{{ question.content|linebreaksbr }}</p>
+                    
+                    <div class="answer-list">
+                        {% for answer in question.answers.all %}
+                        <div class="answer-item">
+                            <p class="answer-content">{{ answer.content|linebreaksbr }}</p>
+                            <small class="answer-meta">Answered by {{ answer.user.username }} ({{ answer.user|get_user_role }}) {{ answer.created_at|timesince }} ago</small>
+                        </div>
+                        {% empty %}
+                        <small>No answers yet. Be the first to reply!</small>
+                        {% endfor %}
+                    </div>
+
+                    {% if is_enrolled or user == course.mentor %}
+                    <div class="answer-form-container">
+                        <form action="{% url 'classroom:post_answer' question.id %}" method="post">
+                            {% csrf_token %}
+                            {{ answer_form.content }}
+                            <button type="submit" class="btn btn-secondary btn-sm">Post Answer</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="content-card">
+                    <p>No questions have been asked for this course yet. Be the first!</p>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
@@ -40,26 +121,8 @@
         <hr>
         
         {% if user.is_authenticated %}
-            {% if user == course.mentor %}
-                <p class="enrolled-status">You are the mentor of this course.</p>
-                 <div class="upload-section">
-                    <h4>Share a New Resource</h4>
-                    <form action="{% url 'classroom:upload_resource' course.id %}" method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ upload_form.as_p }}
-                        <button type="submit" class="btn btn-primary">Upload</button>
-                    </form>
-                </div>
-            {% elif is_enrolled %}
-                <p class="enrolled-status">✓ You are enrolled</p>
-                <div class="upload-section">
-                    <h4>Share a New Resource</h4>
-                    <form action="{% url 'classroom:upload_resource' course.id %}" method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ upload_form.as_p }}
-                        <button type="submit" class="btn btn-primary">Upload</button>
-                    </form>
-                </div>
+            {% if user == course.mentor or is_enrolled %}
+                <a href="{% url 'classroom:upload_resource' course.id %}" class="btn btn-primary btn-block">Share a New Resource</a>
             {% else %}
                 <a href="{% url 'classroom:enroll' course.id %}" class="btn btn-primary btn-block">Enroll to Participate</a>
             {% endif %}

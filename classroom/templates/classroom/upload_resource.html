@@ -2,12 +2,41 @@
 
 {% block content %}
 <div class="form-container">
-    <h2>Upload a Resource for {{ course.title }}</h2>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Upload Resource</button>
-    </form>
+    <div class="form-header">
+        <h2>Upload a New Resource to "{{ course.title }}"</h2>
+    </div>
+    <div class="form-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-field">
+                {{ form.title.label_tag }}
+                {{ form.title }}
+                {% for error in form.title.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.description.label_tag }}
+                {{ form.description }}
+                {% for error in form.description.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.file.label_tag }}
+                {{ form.file }}
+                {% for error in form.file.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.tags.label_tag }}
+                {{ form.tags }}
+                {% if form.tags.help_text %}<div class="helptext">{{ form.tags.help_text|safe }}</div>{% endif %}
+                {% for error in form.tags.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Upload Resource</button>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
